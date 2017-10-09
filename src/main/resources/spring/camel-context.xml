@@ -5,6 +5,12 @@
     <!-- Define a traditional camel context here -->
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
         <propertyPlaceholder id="urls" location="props.properties"/>
+        <restConfiguration bindingMode="auto" component="undertow" port="8082"/>
+		<rest path="/sensor">
+		  <get uri="/{id}" consumes="text/plain" produces="text/plain">
+		    <to uri="direct:sensorData"/>
+		  </get>
+		</rest>    
        <route id="in_sensor">
             <from id="from_mqtt" uri="mqtt://dummy?host={{amq.url.mqtt}}&amp;userName=admin&amp;password=admin&amp;subscribeTopicNames={{topic.names}}"/>
             <log id="_mqtt_log_header" message="header:  ${headers}"/>
@@ -27,6 +33,14 @@
 		         <simple>${header.CamelInfinispanOperationResult}</simple> 
 		      </setBody> 		   
 	          <log id="_log2" logName="remote-get" loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey} with value ${body}"/>
+       </route>
+       <!-- http://192.168.223.130:8082/sensor/001 -->
+       <route id="getdata">
+       	   <from uri="direct:sensorData"/>
+       	    <log id="_sensor_log" message="sensor:  ${header.id}"/>
+       	    <setBody>
+       	    	<simple>Hello world from ${header.id} </simple>
+       	    </setBody>
        </route>
     </camelContext>
 		<bean class="com.demo.jdg.RemoteCacheManagerFactory" id="remoteCacheManagerFactory">
