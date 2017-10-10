@@ -2,7 +2,8 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:camel="http://camel.apache.org/schema/spring"
     xmlns:context="http://www.springframework.org/schema/context"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd             http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd       http://www.springframework.org/schema/context        http://www.springframework.org/schema/context/spring-context-4.2.xsd       ">    <!-- Define a traditional camel context here -->
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd             http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd       http://www.springframework.org/schema/context        http://www.springframework.org/schema/context/spring-context-4.2.xsd       ">
+    <!-- Define a traditional camel context here -->
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
         <propertyPlaceholder id="urls" location="props.properties"/>
         <restConfiguration bindingMode="auto" component="undertow" port="8082"/>
@@ -51,7 +52,5 @@
     </bean>
     <bean factory-bean="remoteCacheManagerFactory"
         factory-method="getRemoteCacheManager" id="cacheManager"/>
-        <context:property-placeholder location="classpath*:props.properties"/>
-
-        
+    <context:property-placeholder location="classpath*:props.properties"/>
 </beans>

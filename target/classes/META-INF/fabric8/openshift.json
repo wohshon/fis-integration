@@ -6,9 +6,9 @@
     "kind" : "Service",
     "metadata" : {
       "annotations" : {
-        "fabric8.io/git-commit" : "20e10f9f727ac71f2074074a143b2bb825a2104f",
+        "fabric8.io/git-commit" : "53b8b1f13c2f7f8ca3ec8f843b25d2ac53e56417",
         "fabric8.io/iconUrl" : "img/icons/camel.svg",
-        "fabric8.io/git-branch" : "master"
+        "fabric8.io/git-branch" : "iot"
       },
       "labels" : {
         "expose" : "true",
@@ -37,9 +37,9 @@
     "kind" : "DeploymentConfig",
     "metadata" : {
       "annotations" : {
-        "fabric8.io/git-commit" : "20e10f9f727ac71f2074074a143b2bb825a2104f",
+        "fabric8.io/git-commit" : "53b8b1f13c2f7f8ca3ec8f843b25d2ac53e56417",
         "fabric8.io/iconUrl" : "img/icons/camel.svg",
-        "fabric8.io/git-branch" : "master",
+        "fabric8.io/git-branch" : "iot",
         "fabric8.io/metrics-path" : "dashboard/file/camel-routes.json/?var-project=camel-ose-springboot-xml&var-version=1.0.0-SNAPSHOT"
       },
       "labels" : {
@@ -66,9 +66,9 @@
       "template" : {
         "metadata" : {
           "annotations" : {
-            "fabric8.io/git-commit" : "20e10f9f727ac71f2074074a143b2bb825a2104f",
+            "fabric8.io/git-commit" : "53b8b1f13c2f7f8ca3ec8f843b25d2ac53e56417",
             "fabric8.io/iconUrl" : "img/icons/camel.svg",
-            "fabric8.io/git-branch" : "master",
+            "fabric8.io/git-branch" : "iot",
             "fabric8.io/metrics-path" : "dashboard/file/camel-routes.json/?var-project=camel-ose-springboot-xml&var-version=1.0.0-SNAPSHOT"
           },
           "labels" : {
@@ -87,9 +87,12 @@
                   "fieldPath" : "metadata.namespace"
                 }
               }
+            }, {
+              "name" : "JAVA_APP_DIR",
+              "value" : "/deployments"
             } ],
-            "image" : "mycompany/camel-ose-springboot-xml:snapshot-171010-144351-0225",
-            "imagePullPolicy" : "IfNotPresent",
+            "image" : "camel-ose-springboot-xml:latest",
+            "imagePullPolicy" : "Always",
             "livenessProbe" : {
               "httpGet" : {
                 "path" : "/health",
@@ -134,6 +137,16 @@
       },
       "triggers" : [ {
         "type" : "ConfigChange"
+      }, {
+        "imageChangeParams" : {
+          "automatic" : true,
+          "containerNames" : [ "spring-boot" ],
+          "from" : {
+            "kind" : "ImageStreamTag",
+            "name" : "camel-ose-springboot-xml:latest"
+          }
+        },
+        "type" : "ImageChange"
       } ]
     }
   } ]
