@@ -1,52 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:camel="http://camel.apache.org/schema/spring"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
-    <!-- Define a traditional camel context here -->
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd             http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd       http://www.springframework.org/schema/context        http://www.springframework.org/schema/context/spring-context-4.2.xsd       ">    <!-- Define a traditional camel context here -->
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
         <propertyPlaceholder id="urls" location="props.properties"/>
         <restConfiguration bindingMode="auto" component="undertow" port="8082"/>
-		<rest path="/sensor">
-		  <get uri="/{id}" consumes="text/plain" produces="text/plain">
-		    <to uri="direct:sensorData"/>
-		  </get>
-		</rest>    
-       <route id="in_sensor">
-            <from id="from_mqtt" uri="mqtt://dummy?host={{amq.url.mqtt}}&amp;userName=admin&amp;password=admin&amp;subscribeTopicNames={{topic.names}}"/>
+        <!-- moved to rest dsl , rest.xml          
+        
+        <rest path="/sensor">
+            <get consumes="text/plain" produces="text/plain" uri="/{id}">
+                <to uri="direct:sensorData"/>
+            </get>
+        </rest> 
+        -->
+        <route id="in_sensor">
+            <from id="from_mqtt" uri="mqtt://dummy?host={{amq.url.mqtt}}&amp;userName={{amq.username}}&amp;password={{amq.password}}&amp;subscribeTopicNames={{topic.names}}"/>
             <log id="_mqtt_log_header" message="header:  ${headers}"/>
             <log id="_mqtt_log" message="Received mqtt message:  ${body}"/>
-			<to uri="direct:jdg"/>
+            <to id="_to1" uri="direct:jdg"/>
         </route>
         <!-- reminder for topic separators, '/' will be used as '.' and vice versa -->
         <route id="_route1">
-			<from uri="direct:jdg"/>
+            <from id="_from1" uri="direct:jdg"/>
             <setHeader headerName="CamelInfinispanKey" id="_setHeader1">
                 <simple>${header.CamelMQTTSubscribeTopic}</simple>
             </setHeader>
             <setHeader headerName="CamelInfinispanValue" id="_setHeader2">
                 <simple>${body}</simple>
             </setHeader>
-			  <to uri="infinispan://localhost?cacheContainer=#cacheManager&amp;cacheName=demoCache&amp;command=PUT"/> 
-    	      <log id="_log1" logName="remote-put" loggingLevel="INFO" message="Updated entry ${header.CamelInfinispanKey} with value ${header.CamelInfinispanValue}"/>
-			  <to uri="infinispan://localhost?cacheContainer=#cacheManager&amp;cacheName=demoCache&amp;command=GET"/>
-		      <setBody> 
-		         <simple>${header.CamelInfinispanOperationResult}</simple> 
-		      </setBody> 		   
-	          <log id="_log2" logName="remote-get" loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey} with value ${body}"/>
-       </route>
-       <!-- http://192.168.223.130:8082/sensor/001 -->
-       <route id="getdata">
-       	   <from uri="direct:sensorData"/>
-       	    <log id="_sensor_log" message="sensor:  ${header.id}"/>
-       	    <setBody>
-       	    	<simple>Hello world from ${header.id} </simple>
-       	    </setBody>
-       </route>
+            <to id="_to2" uri="infinispan://{{jdg.host}}?cacheContainer=#cacheManager&amp;cacheName={{jdg.cache.name}}&amp;command=PUT"/>
+            <log id="_log1" logName="remote-put" loggingLevel="INFO" message="Updated entry ${header.CamelInfinispanKey} with value ${header.CamelInfinispanValue}"/>
+            <to id="_to3" uri="infinispan://{{jdg.host}}?cacheContainer=#cacheManager&amp;cacheName={{jdg.cache.name}}&amp;command=GET"/>
+            <setBody id="_setBody1">
+                <simple>${header.CamelInfinispanOperationResult}</simple>
+            </setBody>
+            <log id="_log2" logName="remote-get" loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey} with value ${body}"/>
+        </route>
+        <!-- http://192.168.223.130:8082/sensor/001 -->
+        <route id="getdata">
+            <from id="_from2" uri="direct:sensorData"/>
+            <log id="_sensor_log" message="sensor:  ${header.id}"/>
+            <setBody id="_setBody2">
+                <simple>Hello world from ${header.id} </simple>
+            </setBody>
+        </route>
     </camelContext>
-		<bean class="com.demo.jdg.RemoteCacheManagerFactory" id="remoteCacheManagerFactory">
-		    <constructor-arg value="192.168.223.130:11222"/>
-		</bean>
-		
-		<bean id="cacheManager" factory-bean="remoteCacheManagerFactory" factory-method="getRemoteCacheManager"/>
-    <!-- <bean class="org.mycompany.MyTransformer" id="myTransformer"/> -->
+    <bean class="com.demo.jdg.RemoteCacheManagerFactory" id="remoteCacheManagerFactory">
+        <constructor-arg value="${jdg.url}"/>
+    </bean>
+    <bean factory-bean="remoteCacheManagerFactory"
+        factory-method="getRemoteCacheManager" id="cacheManager"/>
+        <context:property-placeholder location="classpath*:props.properties"/>
+
+        
 </beans>
