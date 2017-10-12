@@ -16,9 +16,10 @@
         </rest> 
         -->
         <route id="in_sensor">
-            <from id="from_mqtt" uri="mqtt://dummy?host={{amq.url.mqtt}}&amp;userName={{amq.username}}&amp;password={{amq.password}}&amp;subscribeTopicNames={{topic.names}}"/>
+            <from id="from_mqtt" uri="mqtt://dummy?host={{incoming.amq.url.mqtt}}&amp;userName={{incoming.amq.username}}&amp;password={{incoming.amq.password}}&amp;subscribeTopicNames={{incoming.topic.names}}"/>
             <log id="_mqtt_log_header" message="header:  ${headers}"/>
             <log id="_mqtt_log" message="Received mqtt message:  ${body}"/>
+            <to id="to_mqtt" uri="mqtt://dummy?host={{outgoing.amq.url.mqtt}}&amp;userName={{outgoing.amq.username}}&amp;password={{outgoing.amq.password}}&amp;publishTopicName={{outgoing.topic.names}}"/>
             <to id="_to1" uri="direct:jdg"/>
         </route>
         <!-- reminder for topic separators, '/' will be used as '.' and vice versa -->
