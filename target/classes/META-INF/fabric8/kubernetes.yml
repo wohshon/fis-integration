@@ -6,7 +6,7 @@ items:
   kind: "Service"
   metadata:
     annotations:
-      fabric8.io/git-commit: "53b8b1f13c2f7f8ca3ec8f843b25d2ac53e56417"
+      fabric8.io/git-commit: "7b9e595437af1cd3f5d5e374df498c34694d377c"
       fabric8.io/iconUrl: "img/icons/camel.svg"
       fabric8.io/git-branch: "iot"
     labels:
@@ -14,7 +14,7 @@ items:
       provider: "fabric8"
       project: "camel-ose-springboot-xml"
       version: "1.0.0-SNAPSHOT"
-      group: "org.mycompany"
+      group: "com.demo"
     name: "camel-ose-springboot-xml"
   spec:
     ports:
@@ -25,12 +25,12 @@ items:
     selector:
       project: "camel-ose-springboot-xml"
       provider: "fabric8"
-      group: "org.mycompany"
+      group: "com.demo"
 - apiVersion: "extensions/v1beta1"
   kind: "Deployment"
   metadata:
     annotations:
-      fabric8.io/git-commit: "53b8b1f13c2f7f8ca3ec8f843b25d2ac53e56417"
+      fabric8.io/git-commit: "7b9e595437af1cd3f5d5e374df498c34694d377c"
       fabric8.io/iconUrl: "img/icons/camel.svg"
       fabric8.io/git-branch: "iot"
       fabric8.io/metrics-path: "dashboard/file/camel-routes.json/?var-project=camel-ose-springboot-xml&var-version=1.0.0-SNAPSHOT"
@@ -38,7 +38,7 @@ items:
       provider: "fabric8"
       project: "camel-ose-springboot-xml"
       version: "1.0.0-SNAPSHOT"
-      group: "org.mycompany"
+      group: "com.demo"
     name: "camel-ose-springboot-xml"
   spec:
     replicas: 1
@@ -46,11 +46,11 @@ items:
       matchLabels:
         project: "camel-ose-springboot-xml"
         provider: "fabric8"
-        group: "org.mycompany"
+        group: "com.demo"
     template:
       metadata:
         annotations:
-          fabric8.io/git-commit: "53b8b1f13c2f7f8ca3ec8f843b25d2ac53e56417"
+          fabric8.io/git-commit: "7b9e595437af1cd3f5d5e374df498c34694d377c"
           fabric8.io/iconUrl: "img/icons/camel.svg"
           fabric8.io/git-branch: "iot"
           fabric8.io/metrics-path: "dashboard/file/camel-routes.json/?var-project=camel-ose-springboot-xml&var-version=1.0.0-SNAPSHOT"
@@ -58,7 +58,7 @@ items:
           provider: "fabric8"
           project: "camel-ose-springboot-xml"
           version: "1.0.0-SNAPSHOT"
-          group: "org.mycompany"
+          group: "com.demo"
       spec:
         containers:
         - env:
@@ -66,10 +66,8 @@ items:
             valueFrom:
               fieldRef:
                 fieldPath: "metadata.namespace"
-          - name: "JAVA_APP_DIR"
-            value: "/deployments"
-          image: "camel-ose-springboot-xml:latest"
-          imagePullPolicy: "Always"
+          image: "demo/camel-ose-springboot-xml:snapshot-171015-230458-0693"
+          imagePullPolicy: "IfNotPresent"
           livenessProbe:
             httpGet:
               path: "/health"

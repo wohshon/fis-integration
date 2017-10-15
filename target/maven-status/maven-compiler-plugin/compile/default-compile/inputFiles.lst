@@ -1,2 +1,4 @@
-/home/virtuser/workspace10/fis-integration-layer/src/main/java/org/mycompany/Application.java
+/home/virtuser/workspace10/fis-integration-layer/src/main/java/com/demo/processor/TopicProcessor.java
 /home/virtuser/workspace10/fis-integration-layer/src/main/java/com/demo/jdg/RemoteCacheManagerFactory.java
+/home/virtuser/workspace10/fis-integration-layer/src/main/java/com/demo/Application.java
+/home/virtuser/workspace10/fis-integration-layer/src/main/java/com/demo/processor/JDGProcessor.java
