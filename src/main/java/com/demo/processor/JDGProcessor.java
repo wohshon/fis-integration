@@ -36,7 +36,7 @@ public class JDGProcessor implements Processor {
 			values="["+incomingData+"]";
 			//array=new String[]{incomingData};		
 //			exchg.getIn().setHeader("CamelInfinispanKey", exchg.getIn().getHeader("IncomingChannel"));
-			exchg.getIn().setHeader("CamelInfinispanKey", exchg.getIn().getHeader("OutgoingChannel"));
+			exchg.getIn().setHeader("CamelInfinispanKey", exchg.getIn().getHeader("JDGTopic"));
 			exchg.getIn().setHeader("CamelInfinispanValue", values);
 		}else {		
 			values=(String)exchg.getIn().getHeader("CamelInfinispanOperationResult");

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rests xmlns="http://camel.apache.org/schema/spring">
     <rest id="rest-261c1ee9-86b4-4342-aac5-b946c9a2b66c" path="/sensor">
-        <get consumes="text/plain" produces="text/plain" uri="/{id}">
+        <get consumes="text/plain" produces="application/json" uri="/{id}">
             <to uri="direct:sensorData"/>
         </get>
     </rest>

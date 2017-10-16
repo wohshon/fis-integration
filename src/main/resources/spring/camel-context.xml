@@ -5,34 +5,34 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd             http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd       http://www.springframework.org/schema/context        http://www.springframework.org/schema/context/spring-context-4.2.xsd       ">
     <!-- Define a traditional camel context here -->
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
-        <propertyPlaceholder id="urls" location="props_dev.properties"/>
+        <propertyPlaceholder id="urls" location="props.properties"/>
         <restConfiguration bindingMode="auto" component="undertow" port="{{rest.port}}"/>
-        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run -->
+        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run 
         <rest path="/sensor">
             <get consumes="text/plain" produces="application/json" uri="/{id}">
                 <to uri="direct:sensorData"/>
             </get>
-        </rest>
-        
+        </rest>        -->
         <route id="incoming_route">
             <from id="from_mqtt" uri="mqtt://endpoint?host={{incoming.amq.url.mqtt}}&amp;userName={{incoming.amq.username}}&amp;password={{incoming.amq.password}}&amp;subscribeTopicNames={{incoming.topic.names}}"/>
             <setHeader headerName="IncomingChannel" id="_setIncomingChannel">
                 <simple>${header.CamelMQTTSubscribeTopic}</simple>
             </setHeader>
+            <!--  send to AMQ and JDG -->
             <process id="incoming_route_topic_processor" ref="topicProcessor"/>
             <log id="_mqtt_log_header" message="header:  ${headers}"/>
             <log id="_mqtt_log" message="Received mqtt message:  ${body}"/>
-            <!--  send to AMQ and JDG -->
             <to id="_to_amq" uri="direct:amq"/>
             <to id="_to_jdg" uri="direct:jdg"/>
         </route>
         <route id="amq_route">
-            <from id="amq_route_from1" uri="direct:amq"/>
-<!-- 
+            <!-- 
             <to id="amq_route_to_amq" uri="mqtt://dummy?host={{outgoing.amq.url.mqtt}}&amp;userName={{outgoing.amq.username}}&amp;password={{outgoing.amq.password}}&amp;publishTopicName={{outgoing.topic.names}}"/>
-
- -->            
- 			<to id="amq_route_to_amq" uri="mqtt://dummy?host={{outgoing.amq.url.mqtt}}&amp;userName={{outgoing.amq.username}}&amp;password={{outgoing.amq.password}}&amp;publishTopicName={$header.OutgoingChannel}"/>
+			<to id="amq_route_to_topic" uri="mqtt://dummy?host={{outgoing.amq.url.mqtt}}&amp;userName={{outgoing.amq.username}}&amp;password={{outgoing.amq.password}}&amp;publishTopicName=${header.OutgoingChannel}"/>
+			
+ -->
+            <from id="amq_route_direct" uri="direct:amq"/>
+            <toD id="amq_route_to_topic" uri="${header.OutgoingAMQURI}"/>
         </route>
         <!-- reminder for topic separators, '/' will be used as '.' and vice versa -->
         <route id="jdg_route">
@@ -43,13 +43,14 @@
                 <simple>${body}</simple>
             </setHeader>
             <setHeader headerName="CamelInfinispanKey" id="jdg_route_setHeader2">
-                <simple>${header.OutgoingChannel}</simple>
+                <simple>${header.JDGTopic}</simple>
             </setHeader>
+            <log id="_sensor_log3" message="JDG GET:  ${header.CamelInfinispanKey}"/>
             <to id="jdg_route_read_array" uri="infinispan://{{jdg.host}}?cacheContainer=#cacheManager&amp;cacheName={{jdg.cache.name}}&amp;command=GET"/>
             <log id="jdg_route_log2" logName="remote-get"
                 loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey}   with value ${header.CamelInfinispanOperationResult}"/>
-
             <process id="_process1" ref="jdgProcessor"/>
+            <log id="_sensor_log2" message="JDG PUT:  ${header.CamelInfinispanKey}"/>
             <to id="jdg_route_write" uri="infinispan://{{jdg.host}}?cacheContainer=#cacheManager&amp;cacheName={{jdg.cache.name}}&amp;command=PUT"/>
             <log id="jdg_route_log1" logName="remote-put"
                 loggingLevel="INFO" message="Updated entry ${header.CamelInfinispanKey} with value ${header.CamelInfinispanValue}"/>
@@ -61,7 +62,7 @@
                 loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey} with value ${body}"/>
         </route>
         <!-- http://192.168.223.130:8082/sensor/001 -->
-        <route id="getdata">
+        <route id="rest_route">
             <from id="_from2" uri="direct:sensorData"/>
             <log id="_sensor_log" message="sensor:  ${header.id}"/>
             <setHeader headerName="CamelInfinispanKey" id="getdata_setHeader1">
@@ -80,7 +81,7 @@
     </bean>
     <bean factory-bean="remoteCacheManagerFactory"
         factory-method="getRemoteCacheManager" id="cacheManager"/>
-    <context:property-placeholder location="classpath*:props_dev.properties"/>
+    <context:property-placeholder location="classpath*:props.properties"/>
     <bean class="com.demo.processor.JDGProcessor" id="jdgProcessor"/>
-        <bean class="com.demo.processor.TopicProcessor" id="topicProcessor"/>
+    <bean class="com.demo.processor.TopicProcessor" id="topicProcessor"/>
 </beans>

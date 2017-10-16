@@ -3,7 +3,7 @@ apiVersion: "v1"
 kind: "Service"
 metadata:
   annotations:
-    fabric8.io/git-commit: "7b9e595437af1cd3f5d5e374df498c34694d377c"
+    fabric8.io/git-commit: "a6eeeb34563cf8dfaa2324be47eb0abf890de0d3"
     fabric8.io/iconUrl: "img/icons/camel.svg"
     fabric8.io/git-branch: "iot"
   labels:
