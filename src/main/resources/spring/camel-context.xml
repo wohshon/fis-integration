@@ -14,11 +14,11 @@
             </get>
         </rest>        -->
         <route id="incoming_route">
+            <!--  send to AMQ and JDG -->
             <from id="from_mqtt" uri="mqtt://endpoint?host={{incoming.amq.url.mqtt}}&amp;userName={{incoming.amq.username}}&amp;password={{incoming.amq.password}}&amp;subscribeTopicNames={{incoming.topic.names}}"/>
             <setHeader headerName="IncomingChannel" id="_setIncomingChannel">
                 <simple>${header.CamelMQTTSubscribeTopic}</simple>
             </setHeader>
-            <!--  send to AMQ and JDG -->
             <process id="incoming_route_topic_processor" ref="topicProcessor"/>
             <log id="_mqtt_log_header" message="header:  ${headers}"/>
             <log id="_mqtt_log" message="Received mqtt message:  ${body}"/>
