@@ -190,7 +190,7 @@ After the pod is running, check if the service datagrid-app-hodrod is running at
           sessionAffinity: None
 
 
-### Deployng Fuse Integration Service
+### Deploying Fuse Integration Service
 
 This should be the last component to deploy. If the endpoints that this service is connecting to is not up, it will throw an error. Error handling to be incorporated later.
 
