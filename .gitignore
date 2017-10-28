@@ -3,3 +3,4 @@
 .classpath
 target/**
 secret
+src/main/java/com/test/**
