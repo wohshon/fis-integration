@@ -7,12 +7,13 @@
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
         <propertyPlaceholder id="urls" location="props.properties"/>
         <restConfiguration bindingMode="auto" component="undertow" port="{{rest.port}}"/>
-        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run 
+        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run
         <rest path="/sensor">
             <get consumes="text/plain" produces="application/json" uri="/{id}">
                 <to uri="direct:sensorData"/>
             </get>
-        </rest>        -->
+        </rest>
+        -->        
         <route id="incoming_route">
             <!--  send to AMQ and JDG -->
             <from id="from_mqtt" uri="mqtt://endpoint?host={{incoming.amq.url.mqtt}}&amp;userName={{incoming.amq.username}}&amp;password={{incoming.amq.password}}&amp;subscribeTopicNames={{incoming.topic.names}}"/>
@@ -22,24 +23,79 @@
             <process id="incoming_route_topic_processor" ref="topicProcessor"/>
             <log id="_mqtt_log_header" message="header:  ${headers}"/>
             <log id="_mqtt_log" message="Received mqtt message:  ${body}"/>
-            <to id="_to_amq" uri="direct:amq"/>
-            <to id="_to_jdg" uri="direct:jdg"/>
+            <multicast>
+             <to id="_to_amq" uri="direct:amq"/>
+             <to id="_to_jdg" uri="direct:jdg"/>
+            <to id="_to_brms" uri="direct:brms"/>
+            </multicast>
+        </route>
+        <route id="brms_route">
+            <from id="brms_route_direct" uri="direct:brms"/>
+            <setHeader headerName="CamelHttpMethod" id="_setHeader1">
+                <constant>POST</constant>
+            </setHeader>
+            <!-- 
+            <process id="brms_process1" ref="brmsProcessor"/>
+ 			-->
+            <setHeader headerName="Exchange.CONTENT_TYPE" id="_setHeader2">
+                <constant>application/json</constant>
+            </setHeader>
+            <log id="brms_route_log1" message="incoming ${body}"/>
+            <to id="_to2" uri="bean:brmsBean?method=prepareQuery"/>
+            <to id="_to1" uri="http4://{{brms.url}}?authPassword={{brms.password}}&amp;authUsername={{brms.username}}"/>
+            <to id="_to3" uri="bean:brmsBean?method=extractValue"/>
+            <choice id="_choice1">
+                <when id="_when1">
+                    <simple>${header.NOTIFY_FLAG} == 'Y' </simple>
+                    <log id="_log1" message="Send notification"/>
+                    <to id="_to4" uri="direct:sendNotification"/>
+                </when>
+                <otherwise id="_otherwise1">
+                    <log id="_log2" message="Status: ${body}"/>
+                </otherwise>
+            </choice>
+        </route>
+        <route id="_route1">
+            <from id="_from1" uri="direct:sendNotification"/>
+            <setBody>
+            	<simple>PSI Level at  ${date:now:yyyy-MM-dd hh:mm}  : ${header.PSI_STATUS}</simple>
+            </setBody>
+            <log id="_log3" message="sendNotification"/>
+            <choice id="_choice2">
+                <when id="_when2">
+                    <simple>${header.NOTIFY_TYPE} == 'email' </simple>
+                    <log id="_log4" message="Send email notification"/>
+                    <to uri="{{email.url}}"/>
+                </when>
+                <when id="_when3">
+                    <simple>${header.NOTIFY_TYPE} == 'slack' </simple>
+                    <log id="_log5" message="Send Slack notification"/>
+                    <to id="_to6" uri="{{slack.webhook}}"/>
+                </when>
+                <otherwise id="_otherwise2">
+                    <log id="_log6" message="notify all"/>
+                    <to id="_to6" uri="{{slack.webhook}}"/>
+                    <to uri="{{email.url}}"/>
+                </otherwise>
+            </choice>
         </route>
         <route id="amq_route">
             <!-- 
             <to id="amq_route_to_amq" uri="mqtt://dummy?host={{outgoing.amq.url.mqtt}}&amp;userName={{outgoing.amq.username}}&amp;password={{outgoing.amq.password}}&amp;publishTopicName={{outgoing.topic.names}}"/>
 			<to id="amq_route_to_topic" uri="mqtt://dummy?host={{outgoing.amq.url.mqtt}}&amp;userName={{outgoing.amq.username}}&amp;password={{outgoing.amq.password}}&amp;publishTopicName=${header.OutgoingChannel}"/>
-			
- -->
+			 -->
+
+            <!-- desintation is dynamically set in topicProcessor -->
             <from id="amq_route_direct" uri="direct:amq"/>
             <toD id="amq_route_to_topic" uri="${header.OutgoingAMQURI}"/>
         </route>
+
         <!-- reminder for topic separators, '/' will be used as '.' and vice versa -->
         <route id="jdg_route">
-            <!-- store incoming value and source in header as a interim storage -->
+            <!-- store incoming value and source in header as a interim storage -->  
             <!-- retrieve array from jdg -->
-            <from id="jdg_route_from1" uri="direct:jdg"/>
-            <setHeader headerName="IncomingData" id="jdg_route_setHeader1">
+          <from id="jdg_route_from1" uri="direct:jdg"/>
+           <setHeader headerName="IncomingData" id="jdg_route_setHeader1">
                 <simple>${body}</simple>
             </setHeader>
             <setHeader headerName="CamelInfinispanKey" id="jdg_route_setHeader2">
@@ -61,7 +117,9 @@
             <log id="jdg_route_log2" logName="remote-get"
                 loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey} with value ${body}"/>
         </route>
+
         <!-- http://192.168.223.130:8082/sensor/001 -->
+
         <route id="rest_route">
             <from id="_from2" uri="direct:sensorData"/>
             <log id="_sensor_log" message="sensor:  ${header.id}"/>
@@ -84,4 +142,9 @@
     <context:property-placeholder location="classpath*:props.properties"/>
     <bean class="com.demo.processor.JDGProcessor" id="jdgProcessor"/>
     <bean class="com.demo.processor.TopicProcessor" id="topicProcessor"/>
+    <bean class="com.demo.processor.BrmsProcessor" id="brmsProcessor"/>
+    <bean class="com.demo.processor.BrmsBean" id="brmsBean"/>
+    <bean class="org.apache.camel.component.slack.SlackComponent" id="slack">
+        <property name="webhookUrl" value="${stack.webhook.url}"/>
+    </bean>
 </beans>
