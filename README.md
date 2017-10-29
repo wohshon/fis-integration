@@ -32,11 +32,14 @@ This section contains all the CLI components to deploy the various services, for
 
 1. Create MQ broker (acting as sensors)
 
+
     oc new-app --template=amq63-basic -p MQ_USERNAME=admin -p MQ_PASSWORD=admin -p AMQ_STORAGE_USAGE_LIMIT=2gb -p IMAGE_STREAM_NAMESPACE=openshift -p MQ_PROTOCOL="openwire,mqtt,amqp" -p APPLICATION_NAME=mock-sensors
+
 
 Create a nodePort pointing to port 1883 for this Pod (or refer to the detailed section below for [mock-sensors](#deploying-the-mock-sensors))   
 
 2. Create MQ broker (for data layer)
+
 
     $ oc new-app --template=amq63-basic -p MQ_USERNAME=admin -p MQ_PASSWORD=password -p AMQ_STORAGE_USAGE_LIMIT=2gb -p  IMAGE_STREAM_NAMESPACE=openshift -p MQ_PROTOCOL="openwire,mqtt,amqp" -p APPLICATION_NAME=amq-broker
 
@@ -44,13 +47,16 @@ Create a nodePort pointing to port 1883 for this Pod (or refer to the detailed s
 
 3. Deploy Datagrid
 
+
     $ oc new-app datagrid71-basic --name=jdg -p USERNAME=admin -p PASSWORD=admin -p ADMIN_GROUP=admin -p IMAGE_STREAM_NAMESPACE=openshift -p CACHE_NAMES=demoCache,testCache
 
 4. Deploy BRMS Decision Server
 
+
     $ oc new-app --template=decisionserver64-basic-s2i  -p KIE_CONTAINER_DEPLOYMENT=psi=com.demo:demorules:1.0 -p KIE_SERVER_USER=kieserver -p KIE_SERVER_PASSWORD=jboss.1234 -p APPLICATION_NAME=kie-app -p SOURCE_REPOSITORY_URL=https://github.com/wohshon/demo-psi-rules -p SOURCE_REPOSITORY_REF=master -p CONTEXT_DIR=/demorules -p IMAGE_STREAM_NAMESPACE=openshift
 
 5. Deploy FIS
+
 
     $ oc new-build --image-stream=fis-java-openshift --name=fis --binary=true
 
@@ -61,6 +67,10 @@ Create a nodePort pointing to port 1883 for this Pod (or refer to the detailed s
     $ oc expose dc fis --port=8082 --name=fis-jdg-rest
 
     $ oc expose svc fis-jdg-rest
+
+
+
+### For more detailed setup instructions, please read on:
 
 This Demo consist of these components:
 
