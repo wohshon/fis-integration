@@ -100,7 +100,7 @@ This Demo consist of these components:
   This is the integration component in the demo, it pulls messages from AMQ, do some basic filtering and route messages back to AMQ based on payload.
 
 
-6. [Running the Client](#client)
+6. [Testing The Setup](#testing-the-setup)
 
   This is a sample mqtt client.
 
