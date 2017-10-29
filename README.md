@@ -188,7 +188,9 @@ Ensure that the `selector` value is pointing to a valid label that can reference
 
 - Via CLI
 
+```
     oc new-app datagrid71-basic --name=jdg -p USERNAME=admin -p PASSWORD=admin -p ADMIN_GROUP=admin -p IMAGE_STREAM_NAMESPACE=openshift -p CACHE_NAMES=demoCache,testCache
+```
 
 We are using the version 7.1 imagestream which we pulled from the [jboss openshift github repo](https://github.com/jboss-openshift/application-templates)
 
@@ -338,15 +340,15 @@ Finally, after deployment, expose the rest endpoint, this is for external client
 
 note down the route that is created
 
-### Running the Client
+### Testing The Setup
 
 There is a amqclient.jar in this repo, Use it to subscribe and send messages to mqtt topics
 
-A quick word on this demo, it assumes there is a sensor call `sensor.temperature` on the mock sensor.
+A quick word on this demo, it assumes there is a sensor call `sensor.psi.1` on the mock sensor.
 
 Messages that to that topic will be routed to
-- a outgoing AMQ instance (or the data access layer in the diagram) to a topic `SENSOR/TEMPERATURE/DATA`
-- Datagrid, a cache call demoCache, a key `SENSOR.TEMPERATURE.DATA` holding a json array of the messages for that 'sensor'.
+- a outgoing AMQ instance (or the data access layer in the diagram) to a topic `SENSOR/PSI/1/DATA`
+- Datagrid, a cache call demoCache, a key `SENSOR.PSI.1.DATA` holding a json array of the messages for that 'sensor'.
 
 
 To test the setup,
