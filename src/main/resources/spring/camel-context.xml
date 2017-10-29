@@ -5,38 +5,38 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd             http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd       http://www.springframework.org/schema/context        http://www.springframework.org/schema/context/spring-context-4.2.xsd       ">
     <!-- Define a traditional camel context here -->
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
-        <propertyPlaceholder id="urls" location="props.properties"/>
+        <propertyPlaceholder id="urls" location="${env:APP_PROPERTY_FILE}" propertiesParserRef="jasypt"/>
         <restConfiguration bindingMode="auto" component="undertow" port="{{rest.port}}"/>
-        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run
+        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run        -->
         <rest path="/sensor">
             <get consumes="text/plain" produces="application/json" uri="/{id}">
                 <to uri="direct:sensorData"/>
             </get>
         </rest>
-        -->        
         <route id="incoming_route">
             <!--  send to AMQ and JDG -->
             <from id="from_mqtt" uri="mqtt://endpoint?host={{incoming.amq.url.mqtt}}&amp;userName={{incoming.amq.username}}&amp;password={{incoming.amq.password}}&amp;subscribeTopicNames={{incoming.topic.names}}"/>
             <setHeader headerName="IncomingChannel" id="_setIncomingChannel">
                 <simple>${header.CamelMQTTSubscribeTopic}</simple>
             </setHeader>
+            <log id="_log7" message="***${sysenv.EMAIL_CREDENTIALS}**"/>
             <process id="incoming_route_topic_processor" ref="topicProcessor"/>
             <log id="_mqtt_log_header" message="header:  ${headers}"/>
             <log id="_mqtt_log" message="Received mqtt message:  ${body}"/>
-            <multicast>
-             <to id="_to_amq" uri="direct:amq"/>
-             <to id="_to_jdg" uri="direct:jdg"/>
-            <to id="_to_brms" uri="direct:brms"/>
+            <multicast id="_multicast1">
+                <to id="_to_amq" uri="direct:amq"/>
+                <to id="_to_jdg" uri="direct:jdg"/>
+                <to id="_to_brms" uri="direct:brms"/>
             </multicast>
         </route>
         <route id="brms_route">
+            <!-- 
+            <process id="brms_process1" ref="brmsProcessor"/>
+ 			-->
             <from id="brms_route_direct" uri="direct:brms"/>
             <setHeader headerName="CamelHttpMethod" id="_setHeader1">
                 <constant>POST</constant>
             </setHeader>
-            <!-- 
-            <process id="brms_process1" ref="brmsProcessor"/>
- 			-->
             <setHeader headerName="Exchange.CONTENT_TYPE" id="_setHeader2">
                 <constant>application/json</constant>
             </setHeader>
@@ -57,15 +57,16 @@
         </route>
         <route id="_route1">
             <from id="_from1" uri="direct:sendNotification"/>
-            <setBody>
-            	<simple>PSI Level at  ${date:now:yyyy-MM-dd hh:mm}  : ${header.PSI_STATUS}</simple>
+            <setBody id="_setBody1">
+                <simple>PSI Level at  ${date:now:yyyy-MM-dd hh:mm}  : ${header.PSI_STATUS}</simple>
             </setBody>
             <log id="_log3" message="sendNotification"/>
+            <removeHeaders id="_removeHeaders1" pattern="*"/>
             <choice id="_choice2">
                 <when id="_when2">
                     <simple>${header.NOTIFY_TYPE} == 'email' </simple>
                     <log id="_log4" message="Send email notification"/>
-                    <to uri="{{email.url}}"/>
+                    <to id="_to5" uri="smtp://{{email.credentials}}@{{email.url}}"/>
                 </when>
                 <when id="_when3">
                     <simple>${header.NOTIFY_TYPE} == 'slack' </simple>
@@ -75,7 +76,7 @@
                 <otherwise id="_otherwise2">
                     <log id="_log6" message="notify all"/>
                     <to id="_to6" uri="{{slack.webhook}}"/>
-                    <to uri="{{email.url}}"/>
+                    <to id="_to7" uri="smtp://{{email.credentials}}@{{email.url}}"/>
                 </otherwise>
             </choice>
         </route>
@@ -84,18 +85,16 @@
             <to id="amq_route_to_amq" uri="mqtt://dummy?host={{outgoing.amq.url.mqtt}}&amp;userName={{outgoing.amq.username}}&amp;password={{outgoing.amq.password}}&amp;publishTopicName={{outgoing.topic.names}}"/>
 			<to id="amq_route_to_topic" uri="mqtt://dummy?host={{outgoing.amq.url.mqtt}}&amp;userName={{outgoing.amq.username}}&amp;password={{outgoing.amq.password}}&amp;publishTopicName=${header.OutgoingChannel}"/>
 			 -->
-
             <!-- desintation is dynamically set in topicProcessor -->
             <from id="amq_route_direct" uri="direct:amq"/>
             <toD id="amq_route_to_topic" uri="${header.OutgoingAMQURI}"/>
         </route>
-
         <!-- reminder for topic separators, '/' will be used as '.' and vice versa -->
         <route id="jdg_route">
-            <!-- store incoming value and source in header as a interim storage -->  
+            <!-- store incoming value and source in header as a interim storage -->
             <!-- retrieve array from jdg -->
-          <from id="jdg_route_from1" uri="direct:jdg"/>
-           <setHeader headerName="IncomingData" id="jdg_route_setHeader1">
+            <from id="jdg_route_from1" uri="direct:jdg"/>
+            <setHeader headerName="IncomingData" id="jdg_route_setHeader1">
                 <simple>${body}</simple>
             </setHeader>
             <setHeader headerName="CamelInfinispanKey" id="jdg_route_setHeader2">
@@ -117,9 +116,7 @@
             <log id="jdg_route_log2" logName="remote-get"
                 loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey} with value ${body}"/>
         </route>
-
         <!-- http://192.168.223.130:8082/sensor/001 -->
-
         <route id="rest_route">
             <from id="_from2" uri="direct:sensorData"/>
             <log id="_sensor_log" message="sensor:  ${header.id}"/>
@@ -134,17 +131,41 @@
                 loggingLevel="INFO" message="REST call : ${body}"/>
         </route>
     </camelContext>
+    <!-- 
+    Bean definitions are required for local testing using mvn camel:run
+    If running in pure springboot, use @Components
+     -->
     <bean class="com.demo.jdg.RemoteCacheManagerFactory" id="remoteCacheManagerFactory">
         <constructor-arg value="${jdg.url}"/>
     </bean>
     <bean factory-bean="remoteCacheManagerFactory"
         factory-method="getRemoteCacheManager" id="cacheManager"/>
-    <context:property-placeholder location="classpath*:props.properties"/>
+
+<!--     <context:property-placeholder location="classpath*:props_dev.properties"/> -->
     <bean class="com.demo.processor.JDGProcessor" id="jdgProcessor"/>
     <bean class="com.demo.processor.TopicProcessor" id="topicProcessor"/>
     <bean class="com.demo.processor.BrmsProcessor" id="brmsProcessor"/>
     <bean class="com.demo.processor.BrmsBean" id="brmsBean"/>
     <bean class="org.apache.camel.component.slack.SlackComponent" id="slack">
-        <property name="webhookUrl" value="${stack.webhook.url}"/>
+        <property name="webhookUrl" value="https://hooks.slack.com/services/${slack.webhook.endpoint}"/>
     </bean>
+    
+<bean id="jasypt" class="org.apache.camel.component.jasypt.JasyptPropertiesParser">
+    <property name="algorithm" value="PBEWITHMD5ANDDES" />
+    <property name="password" value="sysenv:APP_PASSWORD"/>
+</bean>
+     
+<bean id="environmentVariablesConfiguration" class="org.jasypt.encryption.pbe.config.EnvironmentStringPBEConfig">
+    <property name="algorithm" value="PBEWITHMD5ANDDES" />
+    <property name="passwordEnvName" value="APP_PASSWORD" />
+</bean>       
+<bean id="configurationEncryptor" class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor">
+    <property name="config" ref="environmentVariablesConfiguration" />
+</bean> 
+
+<bean id="propertyConfigurer" class="org.jasypt.spring31.properties.EncryptablePropertyPlaceholderConfigurer"> 
+    <constructor-arg ref="configurationEncryptor" /> 
+<!--     <property name="location" value="classpath:app.properties"/> -->
+    <property name="location" value="classpath:#{systemEnvironment['APP_PROPERTY_FILE']}"/>
+</bean>    
 </beans>
