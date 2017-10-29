@@ -35,21 +35,17 @@ This Demo consist of these components:
 
 2. [Deployng JBoss Datagrid](#deploying-jboss-datagrid)
 
-This is the integration component in the demo, it pulls messages from AMQ, do some basic filtering and route messages back to AMQ based on payload.
+  An AMQ pod acting as sensors to host some messages in a topic
 
 3. [Deployng the mock sensors](#deploying-the-mock-sensors)
 
-  An AMQ pod acting as sensors to host some messages in a topic
-
+  This is the integration component in the demo, it pulls messages from AMQ, do some basic filtering and route messages back to AMQ based on payload.
 
 4. [Deployng Fuse Integration Service](#deploying-fuse-integration-service)
 
-  This is the integration component in the demo, it pulls messages from AMQ, do some basic filtering and route messages back to AMQ based on payload.
+  This is a sample mqtt client.
 
 5. [Running the Client](#client)
-
-  This is the integration component in the demo, it pulls messages from AMQ, do some basic filtering and route messages back to AMQ based on payload.
-
 
 
 ### Deploying AMQ

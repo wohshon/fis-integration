@@ -12,8 +12,10 @@ public class TopicProcessor implements Processor {
 	public void process(Exchange exchg) throws Exception {
 		//get topic name
 		String channelName=(String)exchg.getIn().getHeader("IncomingChannel");
-		//does a static mapping of incoming topic to outgoing topic
-		
+		//For every incoming topic, 
+		//create an equivalent of <TOPICNAME>/DATA as MQTT endpoint
+		//create a JDG entry of <TOPICNAME>.DATA
+		//saved them to header
 		String outgoingTopiclName=channelName.toUpperCase()+"/DATA";
 		outgoingTopiclName=outgoingTopiclName.replace('.', '/');
 		String JDGTopiclName=channelName.toUpperCase()+".DATA";
@@ -26,7 +28,6 @@ public class TopicProcessor implements Processor {
 		log.info("Connection String "+uri);
 		exchg.getIn().setHeader("OutgoingAMQURI", uri);
 		exchg.getIn().setHeader("JDGTopic", JDGTopiclName);
-
 	}
 
 }

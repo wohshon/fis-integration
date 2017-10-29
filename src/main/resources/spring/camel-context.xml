@@ -4,22 +4,30 @@
     xmlns:context="http://www.springframework.org/schema/context"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd             http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd       http://www.springframework.org/schema/context        http://www.springframework.org/schema/context/spring-context-4.2.xsd       ">
     <!-- Define a traditional camel context here -->
+    
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+    
+    	<!-- define property file for camel context, encryption enabled by jasypt -->
         <propertyPlaceholder id="urls" location="${env:APP_PROPERTY_FILE}" propertiesParserRef="jasypt"/>
+        
+        <!-- define rest endpoint, for retreiving values from JDG -->
         <restConfiguration bindingMode="auto" component="undertow" port="{{rest.port}}"/>
-        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run        -->
+        
+        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run 
         <rest path="/sensor">
             <get consumes="text/plain" produces="application/json" uri="/{id}">
                 <to uri="direct:sensorData"/>
             </get>
         </rest>
+         -->
+         
+        <!--  main route to subscribe to remote MQTT endpoints and pass the data to downstream endpoints -->
         <route id="incoming_route">
-            <!--  send to AMQ and JDG -->
+
             <from id="from_mqtt" uri="mqtt://endpoint?host={{incoming.amq.url.mqtt}}&amp;userName={{incoming.amq.username}}&amp;password={{incoming.amq.password}}&amp;subscribeTopicNames={{incoming.topic.names}}"/>
             <setHeader headerName="IncomingChannel" id="_setIncomingChannel">
                 <simple>${header.CamelMQTTSubscribeTopic}</simple>
             </setHeader>
-            <log id="_log7" message="***${sysenv.EMAIL_CREDENTIALS}**"/>
             <process id="incoming_route_topic_processor" ref="topicProcessor"/>
             <log id="_mqtt_log_header" message="header:  ${headers}"/>
             <log id="_mqtt_log" message="Received mqtt message:  ${body}"/>
@@ -30,9 +38,6 @@
             </multicast>
         </route>
         <route id="brms_route">
-            <!-- 
-            <process id="brms_process1" ref="brmsProcessor"/>
- 			-->
             <from id="brms_route_direct" uri="direct:brms"/>
             <setHeader headerName="CamelHttpMethod" id="_setHeader1">
                 <constant>POST</constant>
@@ -51,17 +56,17 @@
                     <to id="_to4" uri="direct:sendNotification"/>
                 </when>
                 <otherwise id="_otherwise1">
-                    <log id="_log2" message="Status: ${body}"/>
+                    <log id="_log2" message="No need to send notifications for PSI status: ${body}"/>
                 </otherwise>
             </choice>
         </route>
-        <route id="_route1">
+        <route id="notification_route">
             <from id="_from1" uri="direct:sendNotification"/>
             <setBody id="_setBody1">
                 <simple>PSI Level at  ${date:now:yyyy-MM-dd hh:mm}  : ${header.PSI_STATUS}</simple>
             </setBody>
             <log id="_log3" message="sendNotification"/>
-            <removeHeaders id="_removeHeaders1" pattern="*"/>
+            <removeHeaders id="remoteHeadersBeforeSend" pattern="*"/>
             <choice id="_choice2">
                 <when id="_when2">
                     <simple>${header.NOTIFY_TYPE} == 'email' </simple>
@@ -90,9 +95,12 @@
             <toD id="amq_route_to_topic" uri="${header.OutgoingAMQURI}"/>
         </route>
         <!-- reminder for topic separators, '/' will be used as '.' and vice versa -->
+        
+        <!--
+         route for storing incoming  data into JDG
+         Every topic name will have a corresponding array to store the incoming data
+        -->
         <route id="jdg_route">
-            <!-- store incoming value and source in header as a interim storage -->
-            <!-- retrieve array from jdg -->
             <from id="jdg_route_from1" uri="direct:jdg"/>
             <setHeader headerName="IncomingData" id="jdg_route_setHeader1">
                 <simple>${body}</simple>
@@ -101,9 +109,11 @@
                 <simple>${header.JDGTopic}</simple>
             </setHeader>
             <log id="_sensor_log3" message="JDG GET:  ${header.CamelInfinispanKey}"/>
+            <!-- get the array out to store in the latest value-->
             <to id="jdg_route_read_array" uri="infinispan://{{jdg.host}}?cacheContainer=#cacheManager&amp;cacheName={{jdg.cache.name}}&amp;command=GET"/>
             <log id="jdg_route_log2" logName="remote-get"
                 loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey}   with value ${header.CamelInfinispanOperationResult}"/>
+            <!--  Processor to check if entry already exist, if not create new one, if yes, add to the array-->
             <process id="_process1" ref="jdgProcessor"/>
             <log id="_sensor_log2" message="JDG PUT:  ${header.CamelInfinispanKey}"/>
             <to id="jdg_route_write" uri="infinispan://{{jdg.host}}?cacheContainer=#cacheManager&amp;cacheName={{jdg.cache.name}}&amp;command=PUT"/>
@@ -116,7 +126,10 @@
             <log id="jdg_route_log2" logName="remote-get"
                 loggingLevel="INFO" message="GET entry ${header.CamelInfinispanKey} with value ${body}"/>
         </route>
+        
         <!-- http://192.168.223.130:8082/sensor/001 -->
+        <!--  route for retrieving values from JDG based on topic name -->
+
         <route id="rest_route">
             <from id="_from2" uri="direct:sensorData"/>
             <log id="_sensor_log" message="sensor:  ${header.id}"/>
@@ -150,6 +163,7 @@
         <property name="webhookUrl" value="https://hooks.slack.com/services/${slack.webhook.endpoint}"/>
     </bean>
     
+    <!-- jasypt related-->
 <bean id="jasypt" class="org.apache.camel.component.jasypt.JasyptPropertiesParser">
     <property name="algorithm" value="PBEWITHMD5ANDDES" />
     <property name="password" value="sysenv:APP_PASSWORD"/>
