@@ -1,3 +1,4 @@
+<!--  not used as auto config is turn off -->
 <?xml version="1.0" encoding="UTF-8"?>
 <rests xmlns="http://camel.apache.org/schema/spring">
     <rest id="rest-261c1ee9-86b4-4342-aac5-b946c9a2b66c" path="/sensor">

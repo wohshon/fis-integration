@@ -13,13 +13,14 @@
         <!-- define rest endpoint, for retreiving values from JDG -->
         <restConfiguration bindingMode="auto" component="undertow" port="{{rest.port}}"/>
         
-        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run 
+        <!-- moved to rest.xml for spring boot (see application.properties), uncomment for testing in camel:run          -->
+        <!--  have to define here are turning off auto config -->
         <rest path="/sensor">
             <get consumes="text/plain" produces="application/json" uri="/{id}">
                 <to uri="direct:sensorData"/>
             </get>
         </rest>
-         -->
+
          
         <!--  main route to subscribe to remote MQTT endpoints and pass the data to downstream endpoints -->
         <route id="incoming_route">
@@ -47,8 +48,19 @@
             </setHeader>
             <log id="brms_route_log1" message="incoming ${body}"/>
             <to id="_to2" uri="bean:brmsBean?method=prepareQuery"/>
-            <to id="_to1" uri="http4://{{brms.url}}?authPassword={{brms.password}}&amp;authUsername={{brms.username}}"/>
-            <to id="_to3" uri="bean:brmsBean?method=extractValue"/>
+            <!--  only send to brms if the data is the right one -->
+            <choice id="check psi">
+            	<when>
+            		<simple>${body} != ''</simple>
+		            <to id="_to1" uri="http4://{{brms.url}}?authPassword={{brms.password}}&amp;authUsername={{brms.username}}"/>
+		            <to id="_to3" uri="bean:brmsBean?method=extractValue"/>
+            	</when>
+            		<otherwise>
+            			<setHeader headerName="NOTIFY_FLAG">
+							<constant>N</constant>
+            			</setHeader>
+            		</otherwise>
+            </choice>
             <choice id="_choice1">
                 <when id="_when1">
                     <simple>${header.NOTIFY_FLAG} == 'Y' </simple>
@@ -145,8 +157,7 @@
         </route>
     </camelContext>
     <!-- 
-    Bean definitions are required for local testing using mvn camel:run
-    If running in pure springboot, use @Components
+    Have disabled autoconfig for camel components ,else  use @Components
      -->
     <bean class="com.demo.jdg.RemoteCacheManagerFactory" id="remoteCacheManagerFactory">
         <constructor-arg value="${jdg.url}"/>

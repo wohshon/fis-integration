@@ -24,18 +24,21 @@ public class BrmsBean {
 		log.info(body);
 		JsonParser parser=new JsonParser();
 		JsonObject value=parser.parse(body).getAsJsonObject();
-		log.info(value.get("psi").getAsString());		
-		int reading=Integer.valueOf(value.get("psi").getAsString());
-		Gson gson=new GsonBuilder().setPrettyPrinting().create();
-		BrmsInsertElement insert=new BrmsInsertElement();
-		InsertElementWrapper insertElementWrapper=new InsertElementWrapper();
-		insertElementWrapper.setInsert(insert);
-		FireRulesObject fireRulesObject=new FireRulesObject();
-		PsiData psi=new PsiData();
-		psi.setReading(reading);
-		insert.getObject().setPsiDate(psi);
-		BrmsPayload brms=new BrmsPayload(insertElementWrapper,fireRulesObject);
-		String payload=new Gson().toJson(brms);		
+		//check if there is a psi value
+		String payload="";
+		if (value.get("psi") != null) {
+			log.info(value.get("psi").getAsString());		
+			int reading=Integer.valueOf(value.get("psi").getAsString());
+			BrmsInsertElement insert=new BrmsInsertElement();
+			InsertElementWrapper insertElementWrapper=new InsertElementWrapper();
+			insertElementWrapper.setInsert(insert);
+			FireRulesObject fireRulesObject=new FireRulesObject();
+			PsiData psi=new PsiData();
+			psi.setReading(reading);
+			insert.getObject().setPsiDate(psi);
+			BrmsPayload brms=new BrmsPayload(insertElementWrapper,fireRulesObject);
+			payload=new Gson().toJson(brms);			
+		}
 		return payload;
 	}
 	
