@@ -189,7 +189,7 @@ Ensure that the `selector` value is pointing to a valid label that can reference
 - Via CLI
 
 ```
-    oc new-app datagrid71-basic --name=jdg -p USERNAME=admin -p PASSWORD=admin -p ADMIN_GROUP=admin -p IMAGE_STREAM_NAMESPACE=openshift -p CACHE_NAMES=demoCache,testCache
+    oc new-app datagrid71-basic --name=jdg -p USERNAME=admin -p PASSWORD=admin -p ADMIN_GROUP=admin -p IMAGE_STREAM_NAMESPACE=openshift -p CACHE_NAMES=demoCache,testCache -p MEMCACHED_CACHE=''
 ```
 
 We are using the version 7.1 imagestream which we pulled from the [jboss openshift github repo](https://github.com/jboss-openshift/application-templates)
