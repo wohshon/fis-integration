@@ -49,7 +49,7 @@ Create a nodePort pointing to port 1883 for this Pod (or refer to the detailed s
 3. Deploy Datagrid
 
 ```
-    $ oc new-app datagrid71-basic --name=jdg -p USERNAME=admin -p PASSWORD=admin -p ADMIN_GROUP=admin -p IMAGE_STREAM_NAMESPACE=openshift -p CACHE_NAMES=demoCache,testCache
+    $ oc new-app datagrid71-basic --name=jdg -p USERNAME=admin -p PASSWORD=admin -p ADMIN_GROUP=admin -p IMAGE_STREAM_NAMESPACE=openshift -p CACHE_NAMES=demoCache,testCache -p MEMCACHED_CACHE=''
 ```
 
 4. Deploy BRMS Decision Server
@@ -157,24 +157,24 @@ Some Notes
 
 1. Create a yaml file, save it under any name with a `.yml` extension :
 
-    apiVersion: v1
-     kind: Service
-     metadata:
-       name: mqtt-amq-broker-nodeport
-       namespace: integration
-       labels:
-         application: amq-broker
-     spec:
-       ports:
-         - name: port-1
-           protocol: TCP
-           port: 1883
-           targetPort: 1883
-           nodePort: 30005
-       selector:
-         application: amq-broker
-       type: NodePort
-       sessionAffinity: None
+        apiVersion: v1
+         kind: Service
+         metadata:
+           name: mqtt-amq-broker-nodeport
+           namespace: integration
+           labels:
+             application: amq-broker
+         spec:
+           ports:
+             - name: port-1
+               protocol: TCP
+               port: 1883
+               targetPort: 1883
+               nodePort: 30005
+           selector:
+             application: amq-broker
+           type: NodePort
+           sessionAffinity: None
 
 Ensure that the `selector` value is pointing to a valid label that can reference the AMQ POD. You can check the labels under the `deploymentConfig`
 
@@ -219,24 +219,24 @@ After the pod is running, check if the service datagrid-app-hodrod is running at
 
 - create a nodeport for this instance using the sample config below
 
-    apiVersion: v1
-      kind: Service
-      metadata:
-        name: mock-sensor-nodeport
-        namespace: integration
-        labels:
-          application: mock-sensors
-      spec:
-        ports:
-          - name: port-1
-            protocol: TCP
-            port: 1883
-            targetPort: 1883
-            nodePort: 30004
-        selector:
-          application: mock-sensors
-        type: NodePort
-        sessionAffinity: None
+        apiVersion: v1
+          kind: Service
+          metadata:
+            name: mock-sensor-nodeport
+            namespace: integration
+            labels:
+              application: mock-sensors
+          spec:
+            ports:
+              - name: port-1
+                protocol: TCP
+                port: 1883
+                targetPort: 1883
+                nodePort: 30004
+            selector:
+              application: mock-sensors
+            type: NodePort
+            sessionAffinity: None
 
 
 ### Deploying The Decision Server
