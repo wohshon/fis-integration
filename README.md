@@ -280,9 +280,17 @@ The camel project is wired to the AMQ instances and datagrid instance deployed i
 
   You should check they are consistent with your mock sensors, amq and jboss datagrid
 
-  2. props.properties contains entries that looks like `ENC(.....)`, these are encrypted fields to cater for public hosting of this project.
-  You can safely replace them with clear values when deploying in your own environment
+  2. props.properties contains entries that looks like `ENC(.....)`, these are encrypted fields to cater for public hosting of this project. Anyway they are demo accounts and the keys would have probably been rotated
 
+  The fields are encrypted by jasypt. 
+
+  - brms.password, the password to access the kie server
+  - email.credentials, the encrypted userid:password field for mailtrap
+  - slack.webhook.endpont, the token at the end of the webhook url
+
+  To use your own values, download jasypt (v 1.9.2 is used here), unzip and run the following command:
+
+		bin/encrypt.sh input="field-to-be-encrypted" password="your-password-here" algorithm="PBEWITHMD5ANDDES" 
 
 3 ways to deployed the project
 
